@@ -2,7 +2,7 @@
 
 ## Goal
 
-By the end of this tutorial you will have a `CLAUDE.md` file at the root of your project that documents the project idea, functional requirements, and non-functional requirements.
+By the end of this tutorial you will have a `CLAUDE.md` file at the root of your project that documents the project idea, functional requirements, non-functional requirements, and a reference to the database schema.
 
 ---
 
@@ -103,6 +103,20 @@ Write a short list of non-functional requirements relevant to your project.
 
 ---
 
+## Step 6: Add a Database Schema Reference
+
+Your project includes a `schema.md` file that documents all database tables, columns, types, and relationships. Add a section to `CLAUDE.md` that points Claude to it:
+
+```markdown
+## 4. Database Schema
+
+See [schema.md](schema.md) for the full database schema — tables, column definitions, constraints, and relationships.
+```
+
+This matters because when Claude helps you write models, queries, or API endpoints, it needs to know the schema. A direct reference is more reliable than expecting Claude to find the file on its own.
+
+---
+
 ## Summary
 
 You have:
@@ -110,5 +124,6 @@ You have:
 - Defined what the system does and who uses it
 - Listed the system's functional requirements (what it must do)
 - Listed the system's non-functional requirements (how well it must do it)
+- Added a reference to `schema.md` so Claude always knows where to find the database schema
 
 **What comes next:** Tutorial 03 will cover SQLAlchemy ORM and defining the database models.
