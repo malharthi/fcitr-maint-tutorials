@@ -161,7 +161,7 @@ You should see `(venv)` in your terminal prompt. You must activate the virtual e
 With the virtual environment active, install the required packages:
 
 ```bash
-pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv
+pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv "pydantic[email]" "passlib" "bcrypt<4.0"
 ```
 
 | Package | Purpose |
@@ -171,6 +171,9 @@ pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv
 | `sqlalchemy` | ORM for talking to the database |
 | `psycopg2-binary` | PostgreSQL driver (connects SQLAlchemy to PostgreSQL) |
 | `python-dotenv` | Loads environment variables from a `.env` file |
+| `pydantic[email]` | Data validation — the `[email]` extra enables email address validation |
+| `passlib` | Password hashing library |
+| `bcrypt<4.0` | Hashing algorithm used by passlib — pinned below 4.0 for compatibility |
 
 Save the installed packages to a requirements file:
 ```bash
