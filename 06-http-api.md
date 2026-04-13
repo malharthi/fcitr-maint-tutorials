@@ -1,8 +1,8 @@
-# Tutorial 06: Routers
+# Tutorial 06: Building the HTTP API
 
 ## Goal
 
-By the end of this tutorial you will have written all the FastAPI routers and wired them together in `app/main.py`, giving the project a fully functional HTTP API you can test in the browser.
+By the end of this tutorial you will have written all the FastAPI routers and wired them together in `app/main.py`, giving the project a fully functional HTTP API you can test in the browser. **Routing** is the mechanism that makes this possible — it maps each URL in the API to a Python function that handles it.
 
 ---
 
@@ -40,7 +40,7 @@ Here is the flow for a typical request:
 ```
 Browser / Mobile App
         │
-        │  "GET /users/5"
+        │  GET http://localhost:8000/api/users/5
         ↓
    FastAPI Backend  ←── finds the matching route, runs its function
         │
@@ -109,12 +109,12 @@ The **method** signals the intent:
 
 | Method | Meaning | Example |
 |--------|---------|---------|
-| `GET` | Read data — retrieve a resource | `GET /users/5` — fetch user 5 |
-| `POST` | Create a new resource | `POST /users/` — create a new user |
-| `PUT` | Update an existing resource | `PUT /users/5` — update user 5 |
-| `DELETE` | Delete a resource | `DELETE /users/5` — delete user 5 |
+| `GET` | Read data — retrieve a resource | `GET http://localhost:8000/api/users/5` — fetch user 5 |
+| `POST` | Create a new resource | `POST http://localhost:8000/api/users/` — create a new user |
+| `PUT` | Update an existing resource | `PUT http://localhost:8000/api/users/5` — update user 5 |
+| `DELETE` | Delete a resource | `DELETE http://localhost:8000/api/users/5` — delete user 5 |
 
-The same path can handle different methods — `GET /users/5` reads, `PUT /users/5` updates, `DELETE /users/5` deletes. The path identifies *what*, the method identifies *what to do with it*.
+The same path can handle different methods — `GET /api/users/5` reads, `PUT /api/users/5` updates, `DELETE /api/users/5` deletes. The path identifies *what*, the method identifies *what to do with it*.
 
 The **status code** in the response tells the client whether it worked:
 
@@ -145,7 +145,7 @@ def get_user(user_id: int):
     ...
 ```
 
-When the client calls `GET /users/5`, FastAPI extracts `5` from the URL and passes it to the function as `user_id = 5`. Path parameters identify a specific resource — use them when you're operating on one thing by its ID.
+When the client calls `GET http://localhost:8000/api/users/5`, FastAPI extracts `5` from the URL and passes it to the function as `user_id = 5`. Path parameters identify a specific resource — use them when you're operating on one thing by its ID.
 
 ### Query parameters
 
@@ -157,7 +157,7 @@ def list_users(skip: int = 0, limit: int = 100):
     ...
 ```
 
-`GET /users/?skip=20&limit=10` passes `skip=20` and `limit=10` to the function. If the client doesn't include them, the defaults apply. Query parameters are used for optional filtering, sorting, and pagination — things that refine a list, not identify a single resource.
+`GET http://localhost:8000/api/users/?skip=20&limit=10` passes `skip=20` and `limit=10` to the function. If the client doesn't include them, the defaults apply. Query parameters are used for optional filtering, sorting, and pagination — things that refine a list, not identify a single resource.
 
 ### Request body
 
@@ -171,7 +171,7 @@ def create_user(user: schemas.UserCreate):
 
 The client sends:
 ```
-POST /users/
+POST http://localhost:8000/api/users/
 Content-Type: application/json
 
 {
@@ -293,18 +293,7 @@ This is the dependency injection pattern: functions declare what they need, and 
 
 ---
 
-## Step 8: Install `pydantic[email]`
-
-The `UserCreate` schema uses `EmailStr` for email validation, which requires an optional Pydantic dependency:
-
-```bash
-pip install 'pydantic[email]'
-pip freeze > requirements.txt
-```
-
----
-
-## Step 9: Create `app/routers/users.py`
+## Step 8: Create `app/routers/users.py`
 
 With the concepts in place, here is the full users router. Read through it carefully — every other router follows the same structure.
 
@@ -359,7 +348,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 Walk through each route:
 
-**`list_users`** receives two query parameters — `skip` and `limit` — with defaults so they're optional. `GET /users/` returns the first 100 users. `GET /users/?skip=100&limit=50` returns the next 50. This is standard API pagination.
+**`list_users`** receives two query parameters — `skip` and `limit` — with defaults so they're optional. `GET http://localhost:8000/api/users/` returns the first 100 users. `GET http://localhost:8000/api/users/?skip=100&limit=50` returns the next 50. This is standard API pagination.
 
 **`create_user`** receives the user data in the request body as a `UserCreate` schema. FastAPI validates it before calling the function — if `email` is missing or `password` is too short, the client gets a `422` automatically. Inside the function, if the CRUD layer raises a `ValueError` (e.g. email already exists), the router catches it and converts it to an HTTP `400`. The client never sees a Python exception — only an HTTP response.
 
@@ -371,7 +360,7 @@ Walk through each route:
 
 ---
 
-## Step 10: Create `app/routers/buildings.py`
+## Step 9: Create `app/routers/buildings.py`
 
 ```python
 from fastapi import APIRouter, Depends, HTTPException
@@ -431,7 +420,7 @@ def list_rooms_by_building(building_id: int, skip: int = 0, limit: int = 100, db
 
 Two things here differ from the users router:
 
-**Richer response schema.** `GET /buildings/{building_id}` uses `BuildingWithRooms` instead of `BuildingResponse`. The route function is identical — only the schema changes. SQLAlchemy loads the related rooms automatically via the `relationship` defined in `models.py`, and Pydantic serializes them as a nested list. The client sees:
+**Richer response schema.** `GET http://localhost:8000/api/buildings/{building_id}` uses `BuildingWithRooms` instead of `BuildingResponse`. The route function is identical — only the schema changes. SQLAlchemy loads the related rooms automatically via the `relationship` defined in `models.py`, and Pydantic serializes them as a nested list. The client sees:
 
 ```json
 {
@@ -445,11 +434,11 @@ Two things here differ from the users router:
 }
 ```
 
-**Nested route.** `GET /buildings/{building_id}/rooms` is a sub-resource route — it returns the rooms that belong to a specific building. This is a common REST convention: `/parent/{id}/children`. Before querying, the route verifies the building exists and returns a `404` if not.
+**Nested route.** `GET http://localhost:8000/api/buildings/{building_id}/rooms` is a sub-resource route — it returns the rooms that belong to a specific building. This is a common REST convention: `/parent/{id}/children`. Before querying, the route verifies the building exists and returns a `404` if not.
 
 ---
 
-## Step 11: Generate the Remaining Routers
+## Step 10: Generate the Remaining Routers
 
 Rooms, Requests, Schedules, and Reservations follow the exact same structure. Use Claude to generate them one at a time, using the buildings router as the reference.
 
@@ -460,7 +449,7 @@ Look at app/routers/buildings.py. Using the exact same structure, generate
 app/routers/rooms.py for the Room resource.
 
 Specifics:
-- Prefix will be /rooms
+- Prefix will be /api/rooms
 - Use RoomCreate, RoomUpdate, RoomResponse schemas
 - GET /{room_id} should use RoomWithBuilding as response_model
 - No nested sub-resource routes needed
@@ -472,7 +461,7 @@ Then for requests:
 Generate app/routers/requests.py for the Request resource.
 
 Specifics:
-- Prefix will be /requests
+- Prefix will be /api/requests
 - Use RequestCreate, RequestUpdate, RequestResponse, RequestWithDetails schemas
 - GET /{request_id} should use RequestWithDetails as response_model
 - Add GET /user/{user_id} — returns all requests by a user (use get_requests_by_user)
@@ -488,7 +477,7 @@ Then for schedules and reservations, describe their filter routes and any extra 
 
 ---
 
-## Step 12: Create `app/main.py`
+## Step 11: Create `app/main.py`
 
 `main.py` is the entry point for the entire application. It creates the FastAPI app instance, tells SQLAlchemy to create the database tables, and mounts all the routers:
 
@@ -515,7 +504,7 @@ app.include_router(reservations.router, prefix="/api/reservations", tags=["Reser
 
 ---
 
-## Step 13: Run and Test
+## Step 12: Run and Test
 
 Start the server:
 
